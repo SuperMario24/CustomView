@@ -310,25 +310,78 @@ onWindowFocusChanged均会被调用，如果频繁的执行onResume和onPause，
      }
 
 
-2.
+2.View.post(runnable)
+
+通过post可以将一个runnable投递到消息队列的尾部，然后等待Looper调用此runnable的时候View也已经初始化好了，典型代码如下：
+
+     peotected void onStart(){
+          super.onStart();
+          view.post(new Runnable(){
+
+               public void run(){
+                    int width = view.getMeasuredWidth();
+                    int height = view.getMeasuredHeight(); 
+               }
+          });
+     }
+
+(3)ViewTreeObserver
+
+使用ViewTreeObserver的众多回调可以完成这个功能，比如使用onGlobalLayoutListener接口，当View树的状态发生改变或者View树内部的View的
+可见性发生改变时，onGlobalLayout方法将被回调，因此这是一个获取View的宽高的很好的时机，需要注意的是，随着View树的状态改变等，onGlobalLayout
+会被调用多次，典型代码如下：
+
+
+    peotected void onStart(){
+          super.onStart();
+          
+          ViewTreeObserver observer = view.getViewTreeObserver();
+          observer.addOnGlobalLayoutListener(new OnGlobalLayoutListener(){
+               
+               public void onGlobalLayout(){
+               
+                    view.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                    
+                    int width = view.getMeasuredWidth();
+                    int height = view.getMeasuredHeight(); 
+               }
+          })
+      }
+
+
+4.通过手动对View进行measure来得到View的宽高。这种情况比较复杂，要分情况处理，根据View的LayoutParams来分：
+
+
+（1）match_parent
+直接放弃，原因很简单，因为根据View的measure过程，如前面分析的，构造此种MeasureSpec需要知道parentSize，即父容器的剩余空间，而这个时候我们无法知道
+parentSize的大小，理论上不可能测量出View的大小。
+
+
+（2）具体的数值，比如宽高都是100，如下measure：
+
+     int widthMeasurePec = MeasureSpec.makeMeasureSpec(100,MeasureSpec.EXACTLY);
+     int heightMeasurePec = MeasureSpec.makeMeasureSpec(100,MeasureSpec.EXACTLY);
+     view.measure(widthMeasurePec,heightMeasurePec);
+     int width = view.getMeasuredWidth();
+     int height = view.getMeasuredHeight(); 
+
+(3)wrap_content，如下measure：
+
+     
+     int widthMeasurePec = MeasureSpec.makeMeasureSpec(（1<<30）-1,MeasureSpec.AT_MOST);
+     int heightMeasurePec = MeasureSpec.makeMeasureSpec(（1<<30）-1,MeasureSpec.AT_MOST);
+     view.measure(widthMeasurePec,heightMeasurePec);
+     int width = view.getMeasuredWidth();
+     int height = view.getMeasuredHeight(); 
+
+通过分析MeasureSpec的实现可以知道，View的尺寸使用30位二进制表示，也就是最大是30个1，即2^30-1，也就是（1<<30）-1，在最大化模式下，我们用View
+理论上能支持的最大值去构造MeasureSpec是合理的。
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+2.Layout过程
 
 
 

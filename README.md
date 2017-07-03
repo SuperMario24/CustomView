@@ -678,6 +678,95 @@ View的绘制过程遵循如下几步：
 四.自定义View
 
 
+1.自定义View须知：
+
+（1）让View支持wrap_content：因为直接继承View或者ViewGroup的控件，如果不在onMeasure中对wrap_content做特殊处理，那么当外界在布局中使用
+wrap_content时就无法达到预期的效果，和match_parent一致。
+
+（2）如果有必要，让你的View支持padding：因为直接继承View的控件，如果不在draw方法中处理padding，那么padding效果是无法起作用的，另外，
+直接继承ViewGroup的控件需要在onMeasure和onLayout中考虑padding和子元素的margin对其造成的影响，不然将导致padding和子元素的margin失效。
+
+
+（3）尽量不要在View中使用Handler，没必要：因为View的本身就提供了post系列的方法，完全可以替代Handler的作用。
+
+
+（4）如果View中有线程或者动画，需要及时停止，参考View#onDetchedFromWindow：如果有线程或者动画需要停止时，那么onDetchedFromWindow是一个
+很好的时机，当包含此View的Activity退出或者当前View被remove时，View的onDetchedFromWindow方法会被调用，和此方法对应的是onAttachedToWindow，
+当包含此View的Activity启动时，View的onAttachedToWindow方法被调用，
+
+
+
+（5）View带有滑动嵌套时，需要处理好滑动的冲突。
+
+
+
+2.自定义属性：
+
+（1）在values目录下创建自定义属性的XML，比如attrs.xml。文件内容如下：
+
+     <?xml version="1.0" encoding="utf-8"?>
+     <resources>
+         <declare-styleable name="CircleView">
+             <attr name="circle_color" format="color"/>
+         </declare-styleable>
+     </resources>
+     
+ 在上面的XML中声明了一个自定义属性集合“CircleView”,在这个集合中有很多自定义属性，这里只定义了一个格式为“color”的属性“circle_color”,这里
+ 的格式color指的是颜色，除了颜色格式，自定义属性还有其他格式，比如reference是指id，demension是指尺寸，而像string，integer和boolean这种
+ 是指基本数据类型。
+ 
+ 
+（2）在View的构造方法中解析自定义属性的值并做相应处理，对于本例来说，我们需要解析circle_color这个属性的值，代码如下所示：     
+     
+     public CircleView(Context context, AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
+        /**
+         * 解析自定义属性
+         */
+        //加载自定义属性集合CircleView
+        TypedArray a = context.obtainStyledAttributes(attrs,R.styleable.CircleView);
+        //加载指定属性circle_color属性，如果没有指定，则加载Color.Red
+        mColor = a.getColor(R.styleable.CircleView_circle_color,Color.RED);
+        a.recycle();
+        init();
+    } 
+     
+首先加载自定义属性集合CircleView，接着解析CircleView属性集合中的circle_color属性，它的id为R.styleableCircleView_circle_color.
+
+
+
+(3)在布局文件中使用自定义属性：
+
+     <?xml version="1.0" encoding="utf-8"?>
+     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+         xmlns:app="http://schemas.android.com/apk/res-auto"
+         android:id="@+id/activity_main"
+         android:layout_width="match_parent"
+         android:layout_height="match_parent"
+         >
+
+         <com.example.saber.customviewstest.CircleView
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             app:circle_color="@color/light_green"
+              />
+     </LinearLayout>
+     
+首先为了使用自定义属性，必须在布局中添加schemas声明：xmlns:app="http://schemas.android.com/apk/res-auto"。在这个声明中，app是自定义属性的
+前缀，当然也可以换其他名字，但是CircleView中的自定义属性前缀必须和这里的一致。
+     
+     
+     
+     
+     
+     
+     
+     
+
+
+
+
+
 
 
 
